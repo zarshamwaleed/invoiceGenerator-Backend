@@ -3,7 +3,6 @@ const cors = require("cors");
 require("./db/config");
 const Signup = require("./db/signup");
 const Invoice = require("./db/invoice");
-
 const { OAuth2Client } = require("google-auth-library");
 
 const GOOGLE_CLIENT_ID =
@@ -21,6 +20,11 @@ const formatUser = (user) => ({
   email: user.email,
   picture: user.picture || "",
   googleSignIn: user.googleSignIn || false,
+});
+
+// ✅ GET fallback for root
+app.get("/", (req, res) => {
+  res.send("✅ Backend is running on Vercel! Use API routes with POST/GET as required.");
 });
 
 // ======== SIGNUP ========
@@ -41,6 +45,11 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+// ✅ GET fallback for signup
+app.get("/signup", (req, res) => {
+  res.send("❌ Please use POST /signup with user details in JSON.");
+});
+
 // ======== SIGNIN (email/password) ========
 app.post("/signin", async (req, res) => {
   const { email, password } = req.body;
@@ -58,6 +67,11 @@ app.post("/signin", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
+});
+
+// ✅ GET fallback for signin
+app.get("/signin", (req, res) => {
+  res.send("❌ Please use POST /signin with email & password in JSON.");
 });
 
 // ======== GOOGLE LOGIN ========
@@ -98,7 +112,11 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
-// ======== AUTH ME (check session) ========
+app.get("/api/auth/google", (req, res) => {
+  res.send("❌ Please use POST /api/auth/google with Google token in JSON.");
+});
+
+// ======== AUTH ME ========
 app.get("/auth/me", async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ error: "Missing email" });
@@ -112,7 +130,7 @@ app.get("/auth/me", async (req, res) => {
   }
 });
 
-// ======== CREATE INVOICE (full or minimal) ========
+// ======== CREATE INVOICE ========
 app.post("/invoice", async (req, res) => {
   try {
     let { type, userId } = req.body;
@@ -126,7 +144,6 @@ app.post("/invoice", async (req, res) => {
       else type = "INVOICE";
     }
 
-    // Set status based on payment
     const status = req.body.amountPaid === req.body.total ? 'PAID' : 'UNPAID';
 
     const invoice = new Invoice({ ...req.body, type, userId, status });
@@ -139,6 +156,11 @@ app.post("/invoice", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
+});
+
+// ✅ GET fallback for invoice
+app.get("/invoice", (req, res) => {
+  res.send("❌ Please use POST /invoice with invoice data in JSON.");
 });
 
 // ======== GET ALL INVOICES ========
@@ -182,8 +204,7 @@ app.delete("/invoices", async (req, res) => {
 app.put("/invoice/:invoiceNumber", async (req, res) => {
   try {
     const updateData = req.body;
-    
-    // Ensure status is consistent with payment amounts
+
     if (updateData.balanceDue !== undefined || updateData.amountPaid !== undefined) {
       updateData.status = updateData.balanceDue === 0 ? 'PAID' : 'UNPAID';
     }
@@ -193,15 +214,14 @@ app.put("/invoice/:invoiceNumber", async (req, res) => {
       updateData,
       { new: true }
     );
-    
-    if (!invoice) {
-      return res.status(404).json({ message: "Invoice not found" });
-    }
+
+    if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ message: "✅ Invoice updated successfully", invoice });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
 });
+
 // ======== CHECK IF INVOICE EXISTS ========
 app.get("/invoice/check/:invoiceNumber", async (req, res) => {
   try {
@@ -216,9 +236,7 @@ app.get("/invoice/check/:invoiceNumber", async (req, res) => {
 app.get("/invoice/:invoiceNumber", async (req, res) => {
   try {
     const invoice = await Invoice.findOne({ invoiceNumber: req.params.invoiceNumber });
-    if (!invoice) {
-      return res.status(404).json({ message: "Invoice not found" });
-    }
+    if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ invoice });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", message: error.message });
@@ -230,7 +248,7 @@ app.put("/invoice/:invoiceNumber/status", async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ['PAID', 'UNPAID'];
-    
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
@@ -241,23 +259,14 @@ app.put("/invoice/:invoiceNumber/status", async (req, res) => {
       { new: true }
     );
 
-    if (!invoice) {
-      return res.status(404).json({ message: "Invoice not found" });
-    }
+    if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ message: "✅ Invoice status updated successfully", invoice });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
 });
 
-
-app.get("/", (req, res) => {
-  res.send("✅ Backend is running on Vercel!");
-});
-
-
-// // ======== START SERVER ========
-const PORT = 5000;
+// ======== START SERVER ========
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
 
-module.exports = app;
