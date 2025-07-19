@@ -1,19 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI || 
-      "mongodb+srv://vercel_user:7vGqcQWwBsUWsl9f@invoicecluster.b94rfwy.mongodb.net/invoiceDB?retryWrites=true&w=majority&appName=InvoiceCluster";
+    const mongoURI =
+      process.env.MONGODB_URI ||
+      "mongodb://localhost:27017/invoice";
 
-    await mongoose.connect(uri, {
+    console.log("🔄 Connecting to MongoDB...");
+    await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
 
-    console.log("✅ Connected to MongoDB Atlas:", mongoose.connection.name);
-  } catch (err) {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.log("✅ MongoDB connected:", mongoose.connection.name);
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error.message);
+    process.exit(1); // Stop server if DB fails
   }
 };
 
-connectDB();
+module.exports = connectDB;
