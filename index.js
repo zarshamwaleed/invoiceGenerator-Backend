@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-require("./db/config");
+const connectDB = require("./db/config");
+connectDB();  // ✅ Connects to MongoDB Atlas
+
 const Signup = require("./db/signup");
 const Invoice = require("./db/invoice");
 const { OAuth2Client } = require("google-auth-library");
