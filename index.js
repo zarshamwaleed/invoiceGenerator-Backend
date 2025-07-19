@@ -250,6 +250,14 @@ app.put("/invoice/:invoiceNumber/status", async (req, res) => {
   }
 });
 
-// ======== START SERVER ========
-const PORT = 5000;
-app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+
+app.get("/", (req, res) => {
+  res.send("✅ Backend is running on Vercel!");
+});
+
+
+// // ======== START SERVER ========
+// const PORT = 5000;
+// app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+
+module.exports = app;
