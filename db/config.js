@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     await mongoose.connect(
-      'mongodb+srv://zarshamwaleedbutt:ijAbthTUp1XACXga@invoicecluster.b94rfwy.mongodb.net/invoice?retryWrites=true&w=majority&appName=InvoiceCluster',
+      "mongodb+srv://vercel_user:7vGqcQWwBsUWsl9f@invoicecluster.b94rfwy.mongodb.net/invoice?retryWrites=true&w=majority&appName=InvoiceCluster",
       {
         useNewUrlParser: true,
         useUnifiedTopology: true,
@@ -11,9 +11,11 @@ const connectDB = async () => {
     );
 
     console.log("✅ Connected to MongoDB Atlas");
+    console.log("📦 Database name:", mongoose.connection.name);
+
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
   }
 };
 
-module.exports = connectDB;
+connectDB();
