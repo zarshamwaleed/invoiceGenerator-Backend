@@ -2,17 +2,19 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGO_URI;
-
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(
+      "mongodb+srv://vercel_user:7vGqcQWwBsUWsl9f@invoicecluster.b94rfwy.mongodb.net/invoice?retryWrites=true&w=majority&appName=InvoiceCluster",
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }
+    );
 
     console.log("✅ Connected to MongoDB Atlas");
-    console.log("📦 Database:", mongoose.connection.name);
+    console.log("📦 Database name:", mongoose.connection.name);
+
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.error("❌ MongoDB connection error:", err);
   }
 };
 
