@@ -16,6 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+
 const formatUser = (user) => ({
   id: user._id,
   firstName: user.firstName || "",
@@ -24,6 +25,25 @@ const formatUser = (user) => ({
   picture: user.picture || "",
   googleSignIn: user.googleSignIn || false,
 });
+const allowedOrigins = [
+  "http://localhost:3000", // local dev
+  "https://invoice-generator-frontend-ypf8.vercel.app", // deployed frontend
+  "https://invoice-generator-frontend-ypf8-rm04idn5x.vercel.app"
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 
 // ✅ GET fallback for root
 app.get("/", (req, res) => {
