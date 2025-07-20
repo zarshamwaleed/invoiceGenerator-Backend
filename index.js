@@ -26,10 +26,12 @@ const formatUser = (user) => ({
   googleSignIn: user.googleSignIn || false,
 });
 const allowedOrigins = [
-  "http://localhost:3000", // local dev
-  "https://invoice-generator-frontend-ypf8.vercel.app", // deployed frontend
-  "https://invoice-generator-frontend-ypf8-rm04idn5x.vercel.app"
+  "http://localhost:3000",
+  "https://invoice-generator-frontend-ypf8.vercel.app",
+  "https://invoice-generator-frontend-ypf8-rm04idn5x.vercel.app",
+  "https://invoice-generator-frontend-ypf8-739u4eq8o.vercel.app"
 ];
+
 
 app.use(
   cors({
@@ -40,9 +42,12 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
 
 
 // ✅ GET fallback for root
