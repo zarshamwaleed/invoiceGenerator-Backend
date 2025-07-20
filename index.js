@@ -7,7 +7,8 @@ const Signup = require("./db/signup");
 const Invoice = require("./db/invoice");
 const { OAuth2Client } = require("google-auth-library");
 
-const GOOGLE_CLIENT_ID = "369192783250-50g1jib6u4nk2617fbg9elp636k0ccuc.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "338539574534-c1vkhrsohih6mn4nc4ng2d7bnk1mutu0.apps.googleusercontent.com";
+
 
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
