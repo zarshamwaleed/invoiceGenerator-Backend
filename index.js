@@ -11,38 +11,40 @@ const GOOGLE_CLIENT_ID =
   "369192783250-50g1jib6u4nk2617fbg9elp636k0ccuc.apps.googleusercontent.com";
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-
 const app = express();
-app.use(express.json());
-app.use(cors());
 
+// ✅ FIX 1: Allow large payloads (prevents 413 Content Too Large)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-const formatUser = (user) => ({
-  id: user._id,
-  firstName: user.firstName || "",
-  lastName: user.lastName || "",
-  email: user.email,
-  picture: user.picture || "",
-  googleSignIn: user.googleSignIn || false,
-});
+// ✅ FIX 2: Dynamic CORS (allow all your Vercel preview URLs)
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://127.0.0.1:3000",
   "https://invoice-generator-frontend-ypf8.vercel.app",
   "https://invoice-generator-frontend-ypf8-rm04idn5x.vercel.app",
-  "https://invoice-generator-frontend-ypf8-739u4eq8o.vercel.app"
+  "https://invoice-generator-frontend-ypf8-739u4eq8o.vercel.app",
 ];
-
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (
+        !origin || // allow same-origin requests
+        allowedOrigins.includes(origin) || // ✅ already whitelisted
+        origin.endsWith(".vercel.app") // ✅ dynamically allow ALL Vercel preview URLs
+      ) {
+        callback(null, true);
+      } else {
+        console.warn("❌ Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
-
-
 
 // ✅ GET fallback for root
 app.get("/", (req, res) => {
@@ -67,7 +69,6 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ✅ GET fallback for signup
 app.get("/signup", (req, res) => {
   res.send("❌ Please use POST /signup with user details in JSON.");
 });
@@ -91,12 +92,20 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-// ✅ GET fallback for signin
 app.get("/signin", (req, res) => {
   res.send("❌ Please use POST /signin with email & password in JSON.");
 });
 
 // ======== GOOGLE LOGIN ========
+const formatUser = (user) => ({
+  id: user._id,
+  firstName: user.firstName || "",
+  lastName: user.lastName || "",
+  email: user.email,
+  picture: user.picture || "",
+  googleSignIn: user.googleSignIn || false,
+});
+
 app.post("/api/auth/google", async (req, res) => {
   const { token } = req.body;
   try {
@@ -166,7 +175,7 @@ app.post("/invoice", async (req, res) => {
       else type = "INVOICE";
     }
 
-    const status = req.body.amountPaid === req.body.total ? 'PAID' : 'UNPAID';
+    const status = req.body.amountPaid === req.body.total ? "PAID" : "UNPAID";
 
     const invoice = new Invoice({ ...req.body, type, userId, status });
     const result = await invoice.save();
@@ -180,7 +189,6 @@ app.post("/invoice", async (req, res) => {
   }
 });
 
-// ✅ GET fallback for invoice
 app.get("/invoice", (req, res) => {
   res.send("❌ Please use POST /invoice with invoice data in JSON.");
 });
@@ -227,8 +235,12 @@ app.put("/invoice/:invoiceNumber", async (req, res) => {
   try {
     const updateData = req.body;
 
-    if (updateData.balanceDue !== undefined || updateData.amountPaid !== undefined) {
-      updateData.status = updateData.balanceDue === 0 ? 'PAID' : 'UNPAID';
+    if (
+      updateData.balanceDue !== undefined ||
+      updateData.amountPaid !== undefined
+    ) {
+      updateData.status =
+        updateData.balanceDue === 0 ? "PAID" : "UNPAID";
     }
 
     const invoice = await Invoice.findOneAndUpdate(
@@ -247,7 +259,9 @@ app.put("/invoice/:invoiceNumber", async (req, res) => {
 // ======== CHECK IF INVOICE EXISTS ========
 app.get("/invoice/check/:invoiceNumber", async (req, res) => {
   try {
-    const invoice = await Invoice.findOne({ invoiceNumber: req.params.invoiceNumber });
+    const invoice = await Invoice.findOne({
+      invoiceNumber: req.params.invoiceNumber,
+    });
     res.json({ exists: !!invoice });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error", message: error.message });
@@ -257,7 +271,9 @@ app.get("/invoice/check/:invoiceNumber", async (req, res) => {
 // Get single invoice by invoice number
 app.get("/invoice/:invoiceNumber", async (req, res) => {
   try {
-    const invoice = await Invoice.findOne({ invoiceNumber: req.params.invoiceNumber });
+    const invoice = await Invoice.findOne({
+      invoiceNumber: req.params.invoiceNumber,
+    });
     if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ invoice });
   } catch (error) {
@@ -269,7 +285,7 @@ app.get("/invoice/:invoiceNumber", async (req, res) => {
 app.put("/invoice/:invoiceNumber/status", async (req, res) => {
   try {
     const { status } = req.body;
-    const validStatuses = ['PAID', 'UNPAID'];
+    const validStatuses = ["PAID", "UNPAID"];
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
@@ -290,5 +306,6 @@ app.put("/invoice/:invoiceNumber/status", async (req, res) => {
 
 // ======== START SERVER ========
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
-
+app.listen(PORT, () =>
+  console.log(`🚀 Server running at http://localhost:${PORT}`)
+);
