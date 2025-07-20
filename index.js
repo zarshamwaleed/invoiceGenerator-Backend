@@ -9,8 +9,6 @@ const { OAuth2Client } = require("google-auth-library");
 
 const GOOGLE_CLIENT_ID =
   "369192783250-50g1jib6u4nk2617fbg9elp636k0ccuc.apps.googleusercontent.com";
-
-
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 
@@ -37,13 +35,7 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
