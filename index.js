@@ -164,8 +164,12 @@ app.get("/auth/me", async (req, res) => {
 // ======== CREATE INVOICE ========
 app.post("/invoice", async (req, res) => {
   try {
-    let { type, userId } = req.body;
+    let { type, userId, visitorId } = req.body;
 
+    // ✅ Only keep valid Mongo ObjectId for userId, otherwise set null
+    const finalUserId = mongoose.Types.ObjectId.isValid(userId) ? userId : null;
+
+    // ✅ Validate invoice type
     const validTypes = ["INVOICE", "CREDIT NOTE", "QUOTE", "PURCHASE ORDER"];
     if (!validTypes.includes(type)) {
       const referer = req.headers.referer || "";
@@ -175,9 +179,18 @@ app.post("/invoice", async (req, res) => {
       else type = "INVOICE";
     }
 
+    // ✅ Calculate status (PAID or UNPAID)
     const status = req.body.amountPaid === req.body.total ? "PAID" : "UNPAID";
 
-    const invoice = new Invoice({ ...req.body, type, userId, status });
+    // ✅ Create invoice with both visitorId & userId
+    const invoice = new Invoice({
+      ...req.body,
+      type,
+      userId: finalUserId,
+      visitorId,
+      status
+    });
+
     const result = await invoice.save();
 
     res.status(200).json({
@@ -185,9 +198,11 @@ app.post("/invoice", async (req, res) => {
       invoice: result.toObject(),
     });
   } catch (error) {
+    console.error("❌ Invoice Save Error:", error);
     res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
 });
+
 
 app.get("/invoice", (req, res) => {
   res.send("❌ Please use POST /invoice with invoice data in JSON.");

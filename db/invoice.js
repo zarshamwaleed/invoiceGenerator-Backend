@@ -31,7 +31,9 @@ const labelsSchema = new mongoose.Schema({
 }, { _id: false });
 
 const invoiceSchema = new mongoose.Schema({
+  visitorId: { type: String, required: false },  // ✅ NEW for guest users
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Signup', required: false },
+  
   type: {
     type: String,
     enum: ['INVOICE', 'CREDIT NOTE', 'QUOTE', 'PURCHASE ORDER'],
@@ -69,6 +71,7 @@ const invoiceSchema = new mongoose.Schema({
   labels: labelsSchema,
   createdAt: { type: Date, default: Date.now }
 }, { collection: 'invoices' });
+
 
 // Add a pre-save hook to automatically update status based on payment
 invoiceSchema.pre('save', function(next) {
