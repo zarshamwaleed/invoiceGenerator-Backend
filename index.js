@@ -197,14 +197,20 @@ app.post("/invoice", async (req, res) => {
       message: "✅ Invoice saved successfully",
       invoice: result.toObject(),
     });
-  } catch (error) {
-  console.error("❌ Invoice Save Error:", error.message, error.stack);
+  }catch (error) {
+    console.error("❌ Invoice Save Error:", error.message, error.stack);
 
-  // ✅ If duplicate invoiceNumber, send proper error instead of generic 500
-  if (error.code === 11000) {
-    return res.status(400).json({
-      error: "Duplicate invoiceNumber",
-      message: "Invoice number already exists. Please use a unique one."
+    // ✅ Handle duplicate invoiceNumber properly
+    if (error.code === 11000) {
+      return res.status(400).json({
+        error: "Duplicate invoiceNumber",
+        message: "Invoice number already exists. Please use a unique one."
+      });
+    }
+
+    return res.status(500).json({
+      error: "Internal Server Error",
+      message: error.message
     });
   }
 });
