@@ -1,12 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./db/config");
-connectDB();  // ✅ Connects to MongoDB Atlas
+connectDB(); // ✅ Connects to MongoDB Atlas
 
 const Signup = require("./db/signup");
 const Invoice = require("./db/invoice");
 const { OAuth2Client } = require("google-auth-library");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const GOOGLE_CLIENT_ID =
   "369192783250-50g1jib6u4nk2617fbg9elp636k0ccuc.apps.googleusercontent.com";
@@ -25,7 +25,7 @@ const allowedOrigins = [
   "http://127.0.0.1:3000",
   "https://invoice-generator-frontend-ypf8.vercel.app",
   "https://invoice-generator-frontend-ypf8-*.vercel.app", // Wildcard for all preview URLs
-  "https://invoice-generator-frontend-ypf8-git-*.vercel.app" // For Git branch deployments
+  "https://invoice-generator-frontend-ypf8-git-*.vercel.app", // For Git branch deployments
 ];
 
 app.use(
@@ -33,12 +33,14 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       // Check each allowed origin pattern
-      const isAllowed = allowedOrigins.some(allowedOrigin => {
-        if (allowedOrigin.includes('*')) {
+      const isAllowed = allowedOrigins.some((allowedOrigin) => {
+        if (allowedOrigin.includes("*")) {
           // Handle wildcard origins
-          const regex = new RegExp(allowedOrigin.replace('.', '\\.').replace('*', '.*'));
+          const regex = new RegExp(
+            allowedOrigin.replace(".", "\\.").replace("*", ".*")
+          );
           return regex.test(origin);
         }
         return origin === allowedOrigin;
@@ -55,25 +57,26 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
     preflightContinue: false, // Important for proper preflight handling
-    optionsSuccessStatus: 204 // Some legacy browsers choke on 204
+    optionsSuccessStatus: 204, // Some legacy browsers choke on 204
   })
 );
 
 // Explicit OPTIONS handler for /invoice
-app.options('/invoice', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+app.options("/invoice", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.status(204).end();
 });
-
 
 // // ✅ Handle preflight OPTIONS
 // app.options("*", cors());
 
 // ✅ GET fallback for root
 app.get("/", (req, res) => {
-  res.send("✅ Backend is running on Vercel! Use API routes with POST/GET as required.");
+  res.send(
+    "✅ Backend is running on Vercel! Use API routes with POST/GET as required."
+  );
 });
 
 // ======== SIGNUP ========
@@ -90,7 +93,9 @@ app.post("/signup", async (req, res) => {
         .status(400)
         .json({ result: "Email already taken. Try a different one." });
     }
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -113,7 +118,9 @@ app.post("/signin", async (req, res) => {
       res.status(401).json({ result: "Invalid email or password" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -182,7 +189,9 @@ app.get("/auth/me", async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json({ user: formatUser(user) });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -200,7 +209,8 @@ app.post("/invoice", async (req, res) => {
       const referer = req.headers.referer || "";
       if (referer.includes("/credit-note-template")) type = "CREDIT NOTE";
       else if (referer.includes("/quote-template")) type = "QUOTE";
-      else if (referer.includes("/purchase-order-template")) type = "PURCHASE ORDER";
+      else if (referer.includes("/purchase-order-template"))
+        type = "PURCHASE ORDER";
       else type = "INVOICE";
     }
 
@@ -213,7 +223,7 @@ app.post("/invoice", async (req, res) => {
       type,
       userId: finalUserId,
       visitorId,
-      status
+      status,
     });
 
     const result = await invoice.save();
@@ -222,24 +232,23 @@ app.post("/invoice", async (req, res) => {
       message: "✅ Invoice saved successfully",
       invoice: result.toObject(),
     });
-  }catch (error) {
+  } catch (error) {
     console.error("❌ Invoice Save Error:", error.message, error.stack);
 
     // ✅ Handle duplicate invoiceNumber properly
     if (error.code === 11000) {
       return res.status(400).json({
         error: "Duplicate invoiceNumber",
-        message: "Invoice number already exists. Please use a unique one."
+        message: "Invoice number already exists. Please use a unique one.",
       });
     }
 
     return res.status(500).json({
       error: "Internal Server Error",
-      message: error.message
+      message: error.message,
     });
   }
 });
-
 
 app.get("/invoice", (req, res) => {
   res.send("❌ Please use POST /invoice with invoice data in JSON.");
@@ -248,16 +257,19 @@ app.get("/invoice", (req, res) => {
 // ======== GET ALL INVOICES ========
 app.get("/invoices", async (req, res) => {
   try {
-    const { type, userId, status } = req.query;
+    const { type, userId, visitorId, status } = req.query;
     const filter = {};
     if (type) filter.type = type;
     if (userId) filter.userId = userId;
+    if (visitorId) filter.visitorId = visitorId;
     if (status) filter.status = status;
 
     const invoices = await Invoice.find(filter).sort({ createdAt: -1 });
     res.json(invoices);
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -268,7 +280,9 @@ app.delete("/invoice/:id", async (req, res) => {
     if (!result) return res.status(404).json({ message: "Invoice not found" });
     res.json({ message: "Invoice deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -278,7 +292,9 @@ app.delete("/invoices", async (req, res) => {
     await Invoice.deleteMany({});
     res.json({ message: "All invoices deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -291,8 +307,7 @@ app.put("/invoice/:invoiceNumber", async (req, res) => {
       updateData.balanceDue !== undefined ||
       updateData.amountPaid !== undefined
     ) {
-      updateData.status =
-        updateData.balanceDue === 0 ? "PAID" : "UNPAID";
+      updateData.status = updateData.balanceDue === 0 ? "PAID" : "UNPAID";
     }
 
     const invoice = await Invoice.findOneAndUpdate(
@@ -304,7 +319,9 @@ app.put("/invoice/:invoiceNumber", async (req, res) => {
     if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ message: "✅ Invoice updated successfully", invoice });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -316,7 +333,9 @@ app.get("/invoice/check/:invoiceNumber", async (req, res) => {
     });
     res.json({ exists: !!invoice });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -329,7 +348,9 @@ app.get("/invoice/:invoiceNumber", async (req, res) => {
     if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ invoice });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
@@ -352,7 +373,9 @@ app.put("/invoice/:invoiceNumber/status", async (req, res) => {
     if (!invoice) return res.status(404).json({ message: "Invoice not found" });
     res.json({ message: "✅ Invoice status updated successfully", invoice });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", message: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
   }
 });
 
