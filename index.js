@@ -24,6 +24,7 @@ const allowedOrigins = [
   "https://invoice-generator-frontend-ypf8.vercel.app",
   "https://invoice-generator-frontend-ypf8-rm04idn5x.vercel.app",
   "https://invoice-generator-frontend-ypf8-739u4eq8o.vercel.app",
+  "https://invoice-generator-frontend-ypf8-bopo0rnhp.vercel.app/"
 ];
 
 app.use(
