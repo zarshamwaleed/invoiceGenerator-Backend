@@ -18,42 +18,57 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ✅ FIX 2: Dynamic CORS (allow all your Vercel preview URLs)
+// ✅ Improved CORS configuration
 const allowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "https://invoice-generator-frontend-ypf8.vercel.app",
-  "https://invoice-generator-frontend-ypf8-rm04idn5x.vercel.app",
-  "https://invoice-generator-frontend-ypf8-739u4eq8o.vercel.app",
-  "https://invoice-generator-frontend-ypf8-bopo0rnhp.vercel.app/"
+  "https://invoice-generator-frontend-ypf8-*.vercel.app", // Wildcard for all preview URLs
+  "https://invoice-generator-frontend-ypf8-git-*.vercel.app" // For Git branch deployments
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // ✅ Always allow same-origin requests (like cURL/Postman)
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
+      
+      // Check each allowed origin pattern
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (allowedOrigin.includes('*')) {
+          // Handle wildcard origins
+          const regex = new RegExp(allowedOrigin.replace('.', '\\.').replace('*', '.*'));
+          return regex.test(origin);
+        }
+        return origin === allowedOrigin;
+      });
 
-      // ✅ Allow all localhost & Vercel URLs
-      if (
-        origin.includes("localhost:3000") ||
-        origin.includes("127.0.0.1:3000") ||
-        origin.endsWith(".vercel.app")
-      ) {
+      if (isAllowed) {
         return callback(null, true);
+      } else {
+        console.warn("❌ Blocked by CORS:", origin);
+        return callback(new Error("Not allowed by CORS"));
       }
-
-      console.warn("❌ Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+    preflightContinue: false, // Important for proper preflight handling
+    optionsSuccessStatus: 204 // Some legacy browsers choke on 204
   })
 );
 
+// Explicit OPTIONS handler for /invoice
+app.options('/invoice', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.status(204).end();
+});
 
-// ✅ Handle preflight OPTIONS
-app.options("*", cors());
+
+// // ✅ Handle preflight OPTIONS
+// app.options("*", cors());
 
 // ✅ GET fallback for root
 app.get("/", (req, res) => {
