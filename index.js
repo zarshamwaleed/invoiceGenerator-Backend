@@ -29,22 +29,35 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (
-        !origin || // allow same-origin requests
-        allowedOrigins.includes(origin) || // ✅ already whitelisted
-        origin.endsWith(".vercel.app") // ✅ dynamically allow ALL Vercel preview URLs
-      ) {
-        callback(null, true);
-      } else {
-        console.warn("❌ Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+      // ✅ Allow Postman / same-origin / server-side calls
+      if (!origin) return callback(null, true);
+
+      // ✅ Allow localhost for development
+      if (origin.includes("localhost:3000") || origin.includes("127.0.0.1:3000")) {
+        return callback(null, true);
       }
+
+      // ✅ Allow all frontend & backend Vercel domains + preview URLs
+      if (
+        origin.endsWith(".vercel.app") ||
+        origin.includes("invoice-generator-frontend-ypf8.vercel.app") ||
+        origin.includes("invoice-generator-backend-liard.vercel.app")
+      ) {
+        return callback(null, true);
+      }
+
+      // ❌ Block everything else
+      console.warn("❌ Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
+// ✅ Handle preflight OPTIONS
+app.options("*", cors());
 
 // ✅ GET fallback for root
 app.get("/", (req, res) => {
