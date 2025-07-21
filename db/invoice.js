@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const lineItemSchema = new mongoose.Schema({
   description: { type: String, trim: true },
@@ -31,7 +31,6 @@ const labelsSchema = new mongoose.Schema({
 }, { _id: false });
 
 const invoiceSchema = new mongoose.Schema({
-  visitorId: { type: String, required: false },  // ✅ NEW for guest users
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Signup', required: false },
   
   type: {
@@ -64,6 +63,7 @@ const invoiceSchema = new mongoose.Schema({
   notes: { type: String },
   terms: { type: String },
   invoiceNumber: { type: String, required: true, unique: true },
+  visitorId: { type: String, required: false },   
   lineItems: {
     type: [lineItemSchema],
     validate: v => Array.isArray(v) && v.length > 0
