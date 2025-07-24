@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const lineItemSchema = new mongoose.Schema({
   description: { type: String, trim: true },
-  quantity: { type: Number, required: true },
-  rate: { type: Number, required: true },
-  amount: { type: Number, required: true }
+  quantity: { type: BigInt, required: true },
+  rate: { type: BigInt, required: true },
+  amount: { type: BigInt, required: true }
 }, { _id: false });
 
 const labelsSchema = new mongoose.Schema({
@@ -53,13 +53,13 @@ const invoiceSchema = new mongoose.Schema({
   dueDate: { type: String },
   poNumber: { type: String, trim: true },
   currency: { type: String, trim: true, required: true },
-  subtotal: { type: Number, required: true },
-  tax: { type: Number },
-  discount: { type: Number },
-  shipping: { type: Number },
-  total: { type: Number, required: true },
-  amountPaid: { type: Number, default: 0 },
-  balanceDue: { type: Number, default: function() { return this.total; } },
+  subtotal: { type: BigInt, required: true },
+  tax: { type: BigInt },
+  discount: { type: BigInt },
+  shipping: { type: BigInt },
+  total: { type: BigInt, required: true },
+  amountPaid: { type: BigInt, default: 0 },
+  balanceDue: { type: BigInt, default: function() { return this.total; } },
   notes: { type: String },
   terms: { type: String },
   invoiceNumber: { type: String, required: true, unique: true },
